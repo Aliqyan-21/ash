@@ -1,10 +1,10 @@
 #include "ash.h"
 #include "ash_execvp.h"
+#include <csignal>
 
 /* constructor
 constructor to initialize the ash class */
 Ash::Ash() {}
-
 
 /* read line function
 this function read lines from the buffer */
@@ -49,7 +49,7 @@ int Ash::ash_execute(std::vector<std::string> args) {
   }
 
   int status = ash::execvp(args[0], args);
-  if(status < 0) {
+  if (status < 0) {
     std::cerr << "ASH: Command not found: " << args[0] << std::endl;
   }
 
@@ -70,4 +70,21 @@ void Ash::run() {
     args = split_line(line);
     status = ash_execute(args);
   } while (status != 0);
+}
+
+/* handle_signal function
+handle_signal function is to handle ctrl+c (SIGNINT) signal */
+void Ash::handle_sigint(int sig) {
+  if (sig == SIGINT) {
+    std::cout << "\n> ";
+    std::cout.flush();
+  }
+}
+
+/* setup_signal_handling function
+public function to make signal handling available
+this function is to handle ctrl+c (SIGNINT) and ctrl+z (SIGTSTP) */
+void Ash::setup_signal_handling() {
+  signal(SIGINT, handle_sigint);
+  signal(SIGTSTP, SIG_IGN); // for now we just ignore ctrl+z so it does not suspend shell
 }
