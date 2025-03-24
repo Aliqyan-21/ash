@@ -1,6 +1,6 @@
 #include <iostream>
-#include <sys/wait.h>
 #include <vector>
+#include "ash_execvp.h"
 
 /* read line function
 this function read lines from the buffer */
@@ -33,47 +33,20 @@ std::vector<std::string> split_line(std::string line) {
 a trivial function to exit our shell if user enters exit or something */
 int ash_exit() { return 0; }
 
-/* ash_execvp function
-here we implemented our own execvp function for abstraction, why?
-because original execvp function takes this *args and **argv as arguments
-and we have vector and string so for that we made this*/
-int ash_execvp(const std::string &command,
-               const std::vector<std::string> &args) {
-  std::vector<char *> c_args;
-  c_args.reserve(args.size() + 2); // args + command + NULL
-
-  for (const std::string &arg : args) {
-    c_args.push_back(const_cast<char *>(arg.c_str()));
-  }
-  c_args.push_back(nullptr);
-
-  // now we can run the original execvp function
-  return execvp(c_args[0], c_args.data());
-}
-
 /* ash_execute function
 this function helps us executre the command by forking the process using
 execvp and fork */
 int ash_execute(std::vector<std::string> args) {
   if (args.empty())
     return 1;
-  int status;
 
   if (args[0] == "exit") {
     return ash_exit();
   }
 
-  pid_t cpid = fork();
-
-  if (cpid == 0) {
-    if (ash_execvp(args[0], args) < 0) {
-      std::cerr << "Ash comand not found: " << args[0] << std::endl;
-      exit(EXIT_FAILURE);
-    }
-  } else if (cpid < 0) {
-    std::cerr << "Error Forking" << std::endl;
-  } else {
-    waitpid(cpid, &status, WUNTRACED);
+  int status = ash::execvp(args[0], args);
+  if(status < 0) {
+    std::cerr << "ASH: Command not found: << args[0]" << std::endl;
   }
 
   return 1;
@@ -83,8 +56,6 @@ int ash_execute(std::vector<std::string> args) {
 so this whill be our main loop in which we will let user know that ash is ready
 to take prompt by printing '> ' */
 void loop() {
-  std::cout << "path: " << getenv("PATH") << std::endl;
-  std::cout << "shell: " << getenv("SHELL") << std::endl;
   std::string line;
   std::vector<std::string> args;
   int status = 1;
@@ -94,7 +65,7 @@ void loop() {
     line = read_line();
     args = split_line(line);
     status = ash_execute(args);
-  } while (status);
+  } while (status != 0);
 }
 
 int main(void) {

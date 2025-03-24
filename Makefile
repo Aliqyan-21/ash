@@ -1,8 +1,8 @@
 CXX = g++
 CXXFLAGS = -Wall -std=c++20
 
-ash : main.cpp
-	${CXX} ${CXXFLAGS} main.cpp -o ash
+ash : ash_execvp.cpp main.cpp
+	${CXX} ${CXXFLAGS} ash_execvp.cpp main.cpp -o ash
 
 run :
 	@./ash
